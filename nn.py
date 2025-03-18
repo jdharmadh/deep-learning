@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-alpha = 0.3
+learning_rate = 0.9
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -20,6 +20,8 @@ def activate_output(x):
     return sigmoid(x)
 def derivative_output(a):
     return sigmoid_derivative(a)
+def step_decay(initial_lr, epoch, drop_factor=0.75, epochs_drop=50):
+    return initial_lr * drop_factor ** (epoch // epochs_drop)
 
 class Neuron:
     def __init__(self, num_weights, output=False):
@@ -43,7 +45,9 @@ class Neuron:
         return self.last_activation
 
     def backward(self, error_from_next_layer):
-        global alpha
+        global learning_rate
+        global epoch
+        alpha = step_decay(learning_rate, epoch)
         # Single sample mode
         if self.last_activation.ndim == 0 or self.last_activation.ndim == 1 and self.last_input.ndim == 1:
             if self.output:
