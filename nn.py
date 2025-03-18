@@ -157,38 +157,74 @@ class NeuralNetwork():
             sample_count += 1
         return total_loss / sample_count
 
-# Data functions remain unchanged.
-def generate_xor_data(num_samples=1000, noise_level=0.1):
-    X = np.random.rand(num_samples, 2)
-    X = 2 * X - 1
-    y_clean = np.logical_xor(X[:, 0] > 0, X[:, 1] > 0).astype(float).reshape(-1, 1)
-    noise = np.random.normal(0, noise_level, size=y_clean.shape)
-    y = y_clean + noise
-    y = np.clip(y, 0, 1)
+def generate_circles_data(num_samples=1000, noise_level=0.1, radius_ratio=0.5):
+    """
+    Generate a dataset of concentric circles where points belong to inner or outer circle.
+    
+    Args:
+        num_samples: Total number of data points to generate
+        noise_level: Standard deviation of Gaussian noise to add
+        radius_ratio: Ratio of inner circle radius to outer circle radius
+    
+    Returns:
+        X: Input features of shape (num_samples, 2)
+        y: Labels of shape (num_samples, 1), 0 for inner circle, 1 for outer circle
+    """
+    # Generate angles uniformly
+    theta = np.random.uniform(0, 2*np.pi, num_samples)
+    
+    # Determine number of samples for each circle
+    inner_samples = num_samples // 2
+    outer_samples = num_samples - inner_samples
+    
+    # Generate inner circle points (class 0)
+    inner_radius = radius_ratio
+    inner_x = inner_radius * np.cos(theta[:inner_samples])
+    inner_y = inner_radius * np.sin(theta[:inner_samples])
+    inner_noise_x = np.random.normal(0, noise_level, inner_samples)
+    inner_noise_y = np.random.normal(0, noise_level, inner_samples)
+    inner_x += inner_noise_x
+    inner_y += inner_noise_y
+    
+    # Generate outer circle points (class 1)
+    outer_radius = 1.0
+    outer_x = outer_radius * np.cos(theta[inner_samples:])
+    outer_y = outer_radius * np.sin(theta[inner_samples:])
+    outer_noise_x = np.random.normal(0, noise_level, outer_samples)
+    outer_noise_y = np.random.normal(0, noise_level, outer_samples)
+    outer_x += outer_noise_x
+    outer_y += outer_noise_y
+    
+    # Combine the circles
+    X = np.vstack([
+        np.column_stack([inner_x, inner_y]),
+        np.column_stack([outer_x, outer_y])
+    ])
+    
+    # Create labels
+    y = np.vstack([
+        np.zeros((inner_samples, 1)),
+        np.ones((outer_samples, 1))
+    ])
+    
+    # Shuffle the data
+    indices = np.random.permutation(num_samples)
+    X = X[indices]
+    y = y[indices]
+    
     return X, y
 
 def split_data(X, y, test_size=0.2):
+    """Split the data into training and test sets."""
     split_idx = int(len(X) * (1 - test_size))
     X_train, X_test = X[:split_idx], X[split_idx:]
     y_train, y_test = y[:split_idx], y[split_idx:]
     return X_train, X_test, y_train, y_test
 
-def visualize_data(X, y):
-    plt.figure(figsize=(10, 8))
-    scatter = plt.scatter(X[:, 0], X[:, 1], c=y.ravel(), cmap='coolwarm', 
-                         alpha=0.7, s=50, edgecolors='k')
-    plt.colorbar(scatter, label='Target Value')
-    plt.grid(True, alpha=0.3)
-    plt.axhline(y=0, color='k', linestyle='-', alpha=0.3)
-    plt.axvline(x=0, color='k', linestyle='-', alpha=0.3)
-    plt.title('XOR Problem Data')
-    plt.xlabel('Input x₁')
-    plt.ylabel('Input x₂')
-    plt.show()
-
+# Generate and split the concentric circles data
 np.random.seed(42)
 num_samples = 400
-X, y = generate_xor_data(num_samples, noise_level=0.05)
+X, y = generate_circles_data(num_samples, noise_level=0.05, radius_ratio=0.5)
 X_train, X_test, y_train, y_test = split_data(X, y, test_size=0.2)
 
 train_losses = []
