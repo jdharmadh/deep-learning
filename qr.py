@@ -61,6 +61,27 @@ def detect_dominant_color(cell):
         return counts.most_common(1)[0][0]
     return "unknown"
 
+num_to_bits = {
+    0: '10',
+    1: '00',
+    2: '01',
+    3: '10',
+    4: '11'
+}
+
+bits_to_num = {v: k for k, v in num_to_bits.items()}
+
+def encode(grid: np.ndarray) -> str:
+    bits = ''.join(num_to_bits[int(cell)] for cell in grid.flatten())
+    chars = [chr(int(bits[i:i+8], 2)) for i in range(0, 72, 8)]
+    return ''.join(chars)
+
+def decode(s: str) -> np.ndarray:
+    bits = ''.join(f'{ord(c):08b}' for c in s)
+    nums = [bits_to_num[bits[i:i+2]] for i in range(0, 72, 2)]
+    return np.array(nums).reshape(6, 6)
+
+
 cap = cv2.VideoCapture(0)
 
 while True:
@@ -87,6 +108,7 @@ while True:
                 grid[y, x] = color_map.get(color, 0)
 
         print(grid)
+        cv2.putText(display, encode(grid), (120, 120), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2)
 
         cv2.imshow("Warped Grid", warped)
     else:
