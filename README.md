@@ -1,3 +1,3 @@
 ### Deep Learning
 
-Writing neural networks from scratch to learn and experiment.
+Random things related to Machine Learning / Deep Learning / Neural Networks.
